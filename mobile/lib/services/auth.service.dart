@@ -14,7 +14,6 @@ import 'package:immich_mobile/repositories/auth.repository.dart';
 import 'package:immich_mobile/repositories/auth_api.repository.dart';
 import 'package:immich_mobile/services/api.service.dart';
 import 'package:immich_mobile/services/app_settings.service.dart';
-import 'package:immich_mobile/services/network.service.dart';
 import 'package:logging/logging.dart';
 import 'package:openapi/api.dart';
 
@@ -23,7 +22,6 @@ final authServiceProvider = Provider(
     ref.watch(authApiRepositoryProvider),
     ref.watch(authRepositoryProvider),
     ref.watch(apiServiceProvider),
-    ref.watch(networkServiceProvider),
     ref.watch(backgroundSyncProvider),
     ref.watch(appSettingsServiceProvider),
   ),
@@ -33,7 +31,6 @@ class AuthService {
   final AuthApiRepository _authApiRepository;
   final AuthRepository _authRepository;
   final ApiService _apiService;
-  final NetworkService _networkService;
   final BackgroundSyncManager _backgroundSyncManager;
   final AppSettingsService _appSettingsService;
   final _log = Logger("AuthService");
@@ -42,7 +39,6 @@ class AuthService {
     this._authApiRepository,
     this._authRepository,
     this._apiService,
-    this._networkService,
     this._backgroundSyncManager,
     this._appSettingsService,
   );
@@ -124,11 +120,14 @@ class AuthService {
       Store.delete(StoreKey.currentUser),
       Store.delete(StoreKey.accessToken),
       Store.delete(StoreKey.assetETag),
-      Store.delete(StoreKey.autoEndpointSwitching),
-      Store.delete(StoreKey.preferredWifiName),
+      Store.delete(StoreKey.endpointMode),
       Store.delete(StoreKey.localEndpoint),
       Store.delete(StoreKey.externalEndpointList),
     ]);
+  }
+
+  Future<void> saveEndpointMode(String mode) {
+    return _authRepository.saveEndpointMode(mode);
   }
 
   Future<void> changePassword(String newPassword) {
@@ -141,16 +140,10 @@ class AuthService {
   }
 
   Future<String?> setOpenApiServiceEndpoint() async {
-    final enable = _authRepository.getEndpointSwitchingFeature();
-    if (!enable) {
-      return null;
-    }
-
-    final wifiName = await _networkService.getWifiName();
-    final savedWifiName = _authRepository.getPreferredWifiName();
+    final mode = _authRepository.getEndpointMode();
     String? endpoint;
 
-    if (wifiName == savedWifiName) {
+    if (mode == 'local') {
       endpoint = await _setLocalConnection();
     }
 

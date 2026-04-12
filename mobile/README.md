@@ -84,6 +84,12 @@ Below is how your code needs to be structured:
 
 - Views: Views use Providers to get the needed information and handle actions without dealing with the technical complexities behind the scenes. Normally Flutter's screen & pages goes here.
 
+## Networking / Endpoint Switching
+
+The app supports configuring a local network endpoint alongside external endpoints. Users can set a **connection preference** (local or external) in Settings → Networking. When set to "Prefer local", the app tries the local endpoint first and falls back to external if unreachable. When set to "Prefer external", only external endpoints are tried.
+
+This feature does **not** require location permissions. The previous WiFi-name-based automatic switching (which did require location permissions) has been removed.
+
 ## Contributing
 
 Please refer to the [architecture](https://docs.immich.app/developer/architecture/) for contributing to the mobile app!

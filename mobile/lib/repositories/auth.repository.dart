@@ -38,12 +38,12 @@ class AuthRepository extends DatabaseRepository {
     });
   }
 
-  bool getEndpointSwitchingFeature() {
-    return Store.tryGet(StoreKey.autoEndpointSwitching) ?? false;
+  String getEndpointMode() {
+    return Store.tryGet(StoreKey.endpointMode) ?? 'local';
   }
 
-  String? getPreferredWifiName() {
-    return Store.tryGet(StoreKey.preferredWifiName);
+  Future<void> saveEndpointMode(String mode) {
+    return Store.put(StoreKey.endpointMode, mode);
   }
 
   String? getLocalEndpoint() {
