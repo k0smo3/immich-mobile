@@ -31,22 +31,6 @@ class DevicePermissionRepository {
     return androidInfo.version.sdkInt;
   }
 
-  Future<bool> hasLocationWhenInUsePermission() => ph.Permission.locationWhenInUse.isGranted;
-
-  Future<bool> requestLocationWhenInUsePermission() async {
-    final result = await ph.Permission.locationWhenInUse.request();
-    return result.isGranted;
-  }
-
-  Future<bool> hasLocationAlwaysPermission() {
-    return ph.Permission.locationAlways.isGranted;
-  }
-
-  Future<bool> requestLocationAlwaysPermission() async {
-    final result = await ph.Permission.locationAlways.request();
-    return result.isGranted;
-  }
-
   Future<bool> openSettings() {
     return ph.openAppSettings();
   }

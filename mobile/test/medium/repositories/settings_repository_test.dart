@@ -62,18 +62,18 @@ void main() {
 
   group('null values', () {
     test('writing null to a nullable key clears the row and reverts the cache to null', () async {
-      await sut.write(SettingsKey.networkPreferredWifiName, 'home-wifi');
-      expect(sut.appConfig.network.preferredWifiName, 'home-wifi');
+      await sut.write(SettingsKey.networkLocalEndpoint, 'home-wifi');
+      expect(sut.appConfig.network.localEndpoint, 'home-wifi');
       expect(await ctx.db.select(ctx.db.settingsEntity).get(), hasLength(1));
 
-      await sut.write(SettingsKey.networkPreferredWifiName, null);
+      await sut.write(SettingsKey.networkLocalEndpoint, null);
 
       expect(await ctx.db.select(ctx.db.settingsEntity).get(), isEmpty);
-      expect(sut.appConfig.network.preferredWifiName, isNull);
+      expect(sut.appConfig.network.localEndpoint, isNull);
     });
 
     test('writing null to an already-null key is a no-op', () async {
-      await sut.write(SettingsKey.networkPreferredWifiName, null);
+      await sut.write(SettingsKey.networkLocalEndpoint, null);
       expect(await ctx.db.select(ctx.db.settingsEntity).get(), isEmpty);
     });
 
@@ -82,14 +82,14 @@ void main() {
           .into(ctx.db.settingsEntity)
           .insert(
             SettingsEntityCompanion.insert(
-              key: SettingsKey.networkPreferredWifiName.name,
+              key: SettingsKey.networkLocalEndpoint.name,
               value: const .new(null),
               updatedAt: .new(DateTime.now()),
             ),
           );
 
       await SettingsRepository.instance.refresh();
-      expect(sut.appConfig.network.preferredWifiName, isNull);
+      expect(sut.appConfig.network.localEndpoint, isNull);
     });
   });
 

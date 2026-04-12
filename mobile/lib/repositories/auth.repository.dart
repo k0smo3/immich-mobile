@@ -1,5 +1,6 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/data/db/main/database.dart';
+import 'package:immich_mobile/domain/models/settings_key.dart';
 import 'package:immich_mobile/infrastructure/repositories/settings.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_stream.repository.dart';
 import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
@@ -20,12 +21,12 @@ class AuthRepository {
     await SyncStreamRepository(_drift).reset();
   }
 
-  bool getEndpointSwitchingFeature() {
-    return _settings.appConfig.network.autoEndpointSwitching;
+  String getEndpointMode() {
+    return _settings.appConfig.network.endpointMode;
   }
 
-  String? getPreferredWifiName() {
-    return _settings.appConfig.network.preferredWifiName;
+  Future<void> saveEndpointMode(String mode) {
+    return _settings.write(SettingsKey.networkEndpointMode, mode);
   }
 
   String? getLocalEndpoint() {

@@ -217,9 +217,6 @@ Future<void> _migrateTo26(Drift drift) async {
   await migrator.migrateBool(StoreKey.legacyAutoPlayVideo, SettingsKey.viewerAutoPlayVideo);
   await migrator.migrateBool(StoreKey.legacyTapToNavigate, SettingsKey.viewerTapToNavigate);
   // Network
-  await migrator.migrateBool(StoreKey.legacyAutoEndpointSwitching, SettingsKey.networkAutoEndpointSwitching);
-  final preferredWifiName = await migrator.readLegacyStoreString(StoreKey.legacyPreferredWifiName.id);
-  migrator.stage(StoreKey.legacyPreferredWifiName, SettingsKey.networkPreferredWifiName, preferredWifiName);
   final localEndpoint = await migrator.readLegacyStoreString(StoreKey.legacyLocalEndpoint.id);
   migrator.stage(StoreKey.legacyLocalEndpoint, SettingsKey.networkLocalEndpoint, localEndpoint);
   await _migrateExternalEndpointList(migrator);

@@ -187,17 +187,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return true;
   }
 
-  Future<void> saveWifiName(String wifiName) async {
-    await _ref.read(settingsProvider).write(.networkPreferredWifiName, wifiName);
+  Future<void> saveEndpointMode(String mode) {
+    return _authService.saveEndpointMode(mode);
   }
 
   Future<void> saveLocalEndpoint(String url) async {
     await _ref.read(settingsProvider).write(.networkLocalEndpoint, url);
     await _apiService.updateHeaders();
-  }
-
-  String? getSavedWifiName() {
-    return _ref.read(appConfigProvider).network.preferredWifiName;
   }
 
   String? getSavedLocalEndpoint() {

@@ -1,18 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/generated/translations.g.dart';
 import 'package:immich_mobile/providers/auth.provider.dart';
-import 'package:immich_mobile/providers/network.provider.dart';
 import 'package:immich_ui/immich_ui.dart';
 
 class LocalNetworkPreference extends HookConsumerWidget {
-  const LocalNetworkPreference({super.key, required this.enabled});
-
-  final bool enabled;
+  const LocalNetworkPreference({super.key});
 
   Future<String?> _showEditDialog(
     BuildContext context,
@@ -46,16 +41,10 @@ class LocalNetworkPreference extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final wifiNameText = useState("");
     final localEndpointText = useState("");
 
     useEffect(() {
-      final wifiName = ref.read(authProvider.notifier).getSavedWifiName();
       final localEndpoint = ref.read(authProvider.notifier).getSavedLocalEndpoint();
-
-      if (wifiName != null) {
-        wifiNameText.value = wifiName;
-      }
 
       if (localEndpoint != null) {
         localEndpointText.value = localEndpoint;
@@ -64,27 +53,9 @@ class LocalNetworkPreference extends HookConsumerWidget {
       return null;
     }, []);
 
-    Future<void> saveWifiName(String wifiName) {
-      wifiNameText.value = wifiName;
-      return ref.read(authProvider.notifier).saveWifiName(wifiName);
-    }
-
     Future<void> saveLocalEndpoint(String url) {
       localEndpointText.value = url;
       return ref.read(authProvider.notifier).saveLocalEndpoint(url);
-    }
-
-    Future<void> handleEditWifiName() async {
-      final wifiName = await _showEditDialog(
-        context,
-        context.t.wifi_name,
-        context.t.your_wifi_name,
-        wifiNameText.value,
-      );
-
-      if (wifiName != null) {
-        await saveWifiName(wifiName);
-      }
     }
 
     Future<void> handleEditServerEndpoint() async {
@@ -101,33 +72,11 @@ class LocalNetworkPreference extends HookConsumerWidget {
       }
     }
 
-    Future<void> autofillCurrentNetwork() async {
-      final wifiName = await ref.read(networkProvider.notifier).getWifiName();
-      if (!context.mounted) {
-        return;
-      }
-
-      if (wifiName == null) {
-        context.showSnackBar(
-          SnackBar(
-            content: Text(
-              context.t.get_wifiname_error,
-              style: context.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: context.colorScheme.onSecondary,
-              ),
-            ),
-            backgroundColor: context.colorScheme.secondary,
-          ),
-        );
-      } else {
-        unawaited(saveWifiName(wifiName));
-      }
-
+    Future<void> autofillCurrentEndpoint() async {
       final serverEndpoint = ref.read(authProvider.notifier).getServerEndpoint();
 
       if (serverEndpoint != null) {
-        unawaited(saveLocalEndpoint(serverEndpoint));
+        await saveLocalEndpoint(serverEndpoint);
       }
     }
 
@@ -161,27 +110,6 @@ class LocalNetworkPreference extends HookConsumerWidget {
                     const SizedBox(height: 4),
                     Divider(color: context.colorScheme.surfaceContainerHighest),
                     ListTile(
-                      enabled: enabled,
-                      contentPadding: const EdgeInsets.only(left: 24, right: 8),
-                      leading: const Icon(Icons.wifi_rounded),
-                      title: Text(context.t.wifi_name),
-                      subtitle: wifiNameText.value.isEmpty
-                          ? Text(context.t.enter_wifi_name)
-                          : Text(
-                              wifiNameText.value,
-                              style: context.textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: enabled ? context.primaryColor : context.colorScheme.onSurface.withAlpha(100),
-                                fontFamily: 'GoogleSansCode',
-                              ),
-                            ),
-                      trailing: IconButton(
-                        onPressed: enabled ? handleEditWifiName : null,
-                        icon: const Icon(Icons.edit_rounded),
-                      ),
-                    ),
-                    ListTile(
-                      enabled: enabled,
                       contentPadding: const EdgeInsets.only(left: 24, right: 8),
                       leading: const Icon(Icons.lan_rounded),
                       title: Text(context.t.server_endpoint),
@@ -190,12 +118,12 @@ class LocalNetworkPreference extends HookConsumerWidget {
                           : Text(
                               localEndpointText.value,
                               style: context.textTheme.labelLarge?.copyWith(
-                                color: enabled ? context.primaryColor : context.colorScheme.onSurface.withAlpha(100),
+                                color: context.primaryColor,
                                 fontFamily: 'GoogleSansCode',
                               ),
                             ),
                       trailing: IconButton(
-                        onPressed: enabled ? handleEditServerEndpoint : null,
+                        onPressed: handleEditServerEndpoint,
                         icon: const Icon(Icons.edit_rounded),
                       ),
                     ),
@@ -207,7 +135,7 @@ class LocalNetworkPreference extends HookConsumerWidget {
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.wifi_find_rounded),
                           label: Text(context.t.use_current_connection),
-                          onPressed: enabled ? autofillCurrentNetwork : null,
+                          onPressed: autofillCurrentEndpoint,
                         ),
                       ),
                     ),

@@ -330,8 +330,7 @@ void main() {
       // the store and settings changes of AuthService.clearLocalData
       await StoreService.I.delete(StoreKey.accessToken);
       await settings.clear(const [
-        .networkAutoEndpointSwitching,
-        .networkPreferredWifiName,
+        .networkEndpointMode,
         .networkLocalEndpoint,
         .networkExternalEndpointList,
       ]);

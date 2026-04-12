@@ -1,13 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/generated/translations.g.dart';
 import 'package:immich_mobile/models/auth/auxilary_endpoint.model.dart';
+import 'package:immich_mobile/providers/auth.provider.dart';
 import 'package:immich_mobile/providers/infrastructure/settings.provider.dart';
-import 'package:immich_mobile/providers/network.provider.dart';
 import 'package:immich_mobile/utils/url_helper.dart';
 import 'package:immich_mobile/widgets/settings/networking_settings/external_network_preference.dart';
 import 'package:immich_mobile/widgets/settings/networking_settings/local_network_preference.dart';
@@ -19,86 +17,13 @@ class NetworkingSettings extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentEndpoint = getServerUrl();
-    final featureEnabled = useState(ref.watch(appConfigProvider).network.autoEndpointSwitching);
-    useValueChanged<bool, void>(featureEnabled.value, (_, _) {
-      unawaited(ref.read(settingsProvider).write(.networkAutoEndpointSwitching, featureEnabled.value));
-    });
+    final endpointMode = useState(ref.watch(appConfigProvider).network.endpointMode);
 
-    Future<void> checkWifiReadPermission() async {
-      final [hasLocationInUse, hasLocationAlways] = await Future.wait([
-        ref.read(networkProvider.notifier).getWifiReadPermission(),
-        ref.read(networkProvider.notifier).getWifiReadBackgroundPermission(),
-      ]);
-
-      bool? isGrantLocationAlwaysPermission;
-
-      if (!hasLocationInUse) {
-        await showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text(context.t.location_permission),
-              content: Text(context.t.location_permission_content),
-              actions: [
-                TextButton(
-                  onPressed: () async {
-                    final isGrant = await ref.read(networkProvider.notifier).requestWifiReadPermission();
-
-                    if (!context.mounted) {
-                      return;
-                    }
-
-                    Navigator.pop(context, isGrant);
-                  },
-                  child: Text(context.t.grant_permission),
-                ),
-              ],
-            );
-          },
-        );
-      }
-
-      if (!context.mounted) {
-        return;
-      }
-
-      if (!hasLocationAlways) {
-        isGrantLocationAlwaysPermission = await showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text(context.t.background_location_permission),
-              content: Text(context.t.background_location_permission_content),
-              actions: [
-                TextButton(
-                  onPressed: () async {
-                    final isGrant = await ref.read(networkProvider.notifier).requestWifiReadBackgroundPermission();
-
-                    if (!context.mounted) {
-                      return;
-                    }
-
-                    Navigator.pop(context, isGrant);
-                  },
-                  child: Text(context.t.grant_permission),
-                ),
-              ],
-            );
-          },
-        );
-      }
-
-      if (isGrantLocationAlwaysPermission != null && !isGrantLocationAlwaysPermission) {
-        await ref.read(networkProvider.notifier).openSettings();
-      }
+    Future<void> switchEndpoint(String mode) async {
+      endpointMode.value = mode;
+      await ref.read(authProvider.notifier).saveEndpointMode(mode);
+      await ref.read(authProvider.notifier).setOpenApiServiceEndpoint();
     }
-
-    useEffect(() {
-      if (featureEnabled.value == true) {
-        unawaited(checkWifiReadPermission());
-      }
-      return null;
-    }, [featureEnabled.value]);
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 96),
@@ -131,18 +56,35 @@ class NetworkingSettings extends HookConsumerWidget {
           padding: const EdgeInsets.only(top: 10.0),
           child: Divider(color: context.colorScheme.surfaceContainerHighest),
         ),
-        SettingsSwitchListTile(
-          enabled: true,
-          valueNotifier: featureEnabled,
-          title: context.t.automatic_endpoint_switching_title,
-          subtitle: context.t.automatic_endpoint_switching_subtitle,
+        ListTile(
+          title: Text(context.t.endpoint_preference_title),
+          subtitle: Text(context.t.endpoint_preference_subtitle),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          child: SegmentedButton<String>(
+            segments: [
+              ButtonSegment(
+                value: 'local',
+                label: Text(context.t.prefer_local_network),
+                icon: const Icon(Icons.home_outlined),
+              ),
+              ButtonSegment(
+                value: 'external',
+                label: Text(context.t.prefer_external_network),
+                icon: const Icon(Icons.dns_outlined),
+              ),
+            ],
+            selected: {endpointMode.value},
+            onSelectionChanged: (modes) => switchEndpoint(modes.first),
+          ),
         ),
         const SizedBox(height: 8),
         SettingGroupTitle(title: context.t.local_network, icon: Icons.home_outlined),
-        LocalNetworkPreference(enabled: featureEnabled.value),
+        const LocalNetworkPreference(),
         const SizedBox(height: 16),
         SettingGroupTitle(title: context.t.external_network, icon: Icons.dns_outlined),
-        ExternalNetworkPreference(enabled: featureEnabled.value),
+        const ExternalNetworkPreference(enabled: true),
       ],
     );
   }

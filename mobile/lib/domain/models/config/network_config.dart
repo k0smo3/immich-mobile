@@ -8,23 +8,20 @@ abstract class NetworkConfig with _$NetworkConfig {
   const NetworkConfig._();
 
   const factory NetworkConfig({
-    @Default(false) bool autoEndpointSwitching,
-    String? preferredWifiName,
+    @Default('local') String endpointMode,
     String? localEndpoint,
     @Default([]) List<String> externalEndpointList,
     @Default({}) Map<String, String> customHeaders,
   }) = _NetworkConfig;
 
-  // We patch `preferredWifiName` and `localEndpoint`, which prevents us from using Freezed `copyWith`
+  // We patch `localEndpoint`, which prevents us from using Freezed `copyWith`
   NetworkConfig copyWith({
-    bool? autoEndpointSwitching,
-    Option<String>? preferredWifiName,
+    String? endpointMode,
     Option<String>? localEndpoint,
     List<String>? externalEndpointList,
     Map<String, String>? customHeaders,
   }) => NetworkConfig(
-    autoEndpointSwitching: autoEndpointSwitching ?? this.autoEndpointSwitching,
-    preferredWifiName: preferredWifiName.patch(this.preferredWifiName),
+    endpointMode: endpointMode ?? this.endpointMode,
     localEndpoint: localEndpoint.patch(this.localEndpoint),
     externalEndpointList: externalEndpointList ?? this.externalEndpointList,
     customHeaders: customHeaders ?? this.customHeaders,

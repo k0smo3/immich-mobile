@@ -25,10 +25,9 @@ enum SettingsKey<T> {
   viewerTapToNavigate<bool>(),
 
   // Network
-  networkAutoEndpointSwitching<bool>(),
+  networkEndpointMode<String>(),
   networkExternalEndpointList<List<String>>(codec: ListCodec(PrimitiveCodec.string)),
   networkCustomHeaders<Map<String, String>>(codec: MapCodec(PrimitiveCodec.string, PrimitiveCodec.string)),
-  networkPreferredWifiName<String?>(),
   networkLocalEndpoint<String?>(),
 
   // Album
