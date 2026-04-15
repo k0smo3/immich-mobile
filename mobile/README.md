@@ -86,7 +86,7 @@ Below is how your code needs to be structured:
 
 ## Networking / Endpoint Switching
 
-The app supports configuring a local network endpoint alongside external endpoints. Users can set a **connection preference** (local or external) in Settings → Networking. When set to "Prefer local", the app tries the local endpoint first and falls back to external if unreachable. When set to "Prefer external", only external endpoints are tried.
+The app supports configuring a local network endpoint alongside external endpoints. Users can set a **connection preference** (local or external) in Settings → Networking. When set to "Prefer local", the app tries the local endpoint first and falls back to external if unreachable. When set to "Prefer external", the app tries external endpoints first and falls back to the local endpoint if all external ones are unreachable.
 
 This feature does **not** require location permissions. The previous WiFi-name-based automatic switching (which did require location permissions) has been removed.
 

@@ -38,7 +38,14 @@ void main() {
       appSettingsService,
     );
 
+    // Skip real TCP socket checks in unit tests — hostnames are fake
+    AuthService.skipTcpCheck = true;
+
     registerFallbackValue(Uri());
+  });
+
+  tearDown(() {
+    AuthService.skipTcpCheck = false;
   });
 
   setUpAll(() async {
@@ -241,6 +248,26 @@ void main() {
       verifyNever(() => apiService.resolveAndSetEndpoint(any(that: contains('local'))));
     });
 
+    test('Should fall back to local if all external endpoints are unavailable', () async {
+      when(() => authRepository.getEndpointMode()).thenReturn('external');
+      when(
+        () => authRepository.getExternalEndpointList(),
+      ).thenReturn([const AuxilaryEndpoint(url: 'https://external.endpoint', status: AuxCheckStatus.valid)]);
+      when(
+        () => apiService.resolveAndSetEndpoint('https://external.endpoint'),
+      ).thenThrow(Exception('External endpoint error'));
+      when(() => authRepository.getLocalEndpoint()).thenReturn('http://local.endpoint');
+      when(
+        () => apiService.resolveAndSetEndpoint('http://local.endpoint'),
+      ).thenAnswer((_) async => 'http://local.endpoint');
+
+      final result = await sut.setOpenApiServiceEndpoint();
+
+      expect(result, 'http://local.endpoint');
+      verify(() => authRepository.getExternalEndpointList()).called(1);
+      verify(() => authRepository.getLocalEndpoint()).called(1);
+    });
+
     test('Should return null if no endpoints are reachable', () async {
       when(() => authRepository.getEndpointMode()).thenReturn('external');
       when(
@@ -249,6 +276,7 @@ void main() {
       when(
         () => apiService.resolveAndSetEndpoint('https://external.endpoint'),
       ).thenThrow(Exception('External endpoint error'));
+      when(() => authRepository.getLocalEndpoint()).thenReturn(null);
 
       final result = await sut.setOpenApiServiceEndpoint();
 
