@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/models/settings_key.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
@@ -139,15 +141,33 @@ class AuthService {
 
   Future<String?> setOpenApiServiceEndpoint() async {
     final mode = _authRepository.getEndpointMode();
-    String? endpoint;
 
     if (mode == 'local') {
-      endpoint = await _setLocalConnection();
+      return await _setLocalConnection() ?? await _setRemoteConnection();
+    } else {
+      return await _setRemoteConnection() ?? await _setLocalConnection();
     }
+  }
 
-    endpoint ??= await _setRemoteConnection();
+  /// Quick TCP-level reachability check. Fails in at most [timeout], which is
+  /// much shorter than the full HTTP probe (well-known + ping = up to 10 s).
+  /// Disable via [skipTcpCheck] in unit tests that use fake hostnames.
+  @visibleForTesting
+  static bool skipTcpCheck = false;
 
-    return endpoint;
+  Future<bool> _isTcpReachable(String url, {Duration timeout = const Duration(seconds: 2)}) async {
+    if (skipTcpCheck) {
+      return true;
+    }
+    try {
+      final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
+      final port = uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80);
+      final socket = await Socket.connect(uri.host, port, timeout: timeout);
+      socket.destroy();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<String?> _setLocalConnection() async {
@@ -177,6 +197,9 @@ class AuthService {
 
     for (var i = 0; i < endpointList.length; i++) {
       try {
+        if (!await _isTcpReachable(endpointList[i].url)) {
+          continue;
+        }
         final url = await _apiService.resolveAndSetEndpoint(endpointList[i].url);
         _log.info("Using external endpoint ${i + 1}");
         return url;
